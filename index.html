@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,7 +9,7 @@
     content="width=device-width, initial-scale=1"
   >
 
-  <title>Card Finder</title>
+  <title>Card Scanner</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -19,231 +20,169 @@
 
     body {
       margin: 0;
-      padding: 20px;
-      background: #f3f4f6;
-      color: #111827;
+      background: #000;
+      color: #fff;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
         sans-serif;
+
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    h1 {
+    .header {
+      padding: 14px 16px;
       text-align: center;
-      margin: 10px 0 6px;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 20px;
-    }
-
-    .scanner {
-      background: white;
-      padding: 16px;
-      border-radius: 20px;
-      box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.08);
+      font-size: 16px;
+      font-weight: 600;
+      background: #111;
     }
 
     #reader {
       width: 100%;
+      flex: 1;
+    }
+
+    #reader video {
+      object-fit: cover !important;
     }
 
     .status {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 10px;
-      background: #f3f4f6;
-      text-align: center;
-      color: #6b7280;
-    }
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
 
-    .manual {
-      margin-top: 20px;
-      background: white;
-      padding: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+
+      padding: 10px 16px;
       border-radius: 20px;
-      box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.08);
+
+      font-size: 14px;
+      white-space: nowrap;
+
+      z-index: 10;
     }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-size: 16px;
-      margin-top: 8px;
+    #reader__dashboard_section_csr,
+    #reader__dashboard_section_swaplink,
+    #reader__dashboard_section_fsr {
+      display: none !important;
     }
 
-    button {
-      width: 100%;
-      margin-top: 10px;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      background: #111827;
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    button:active {
-      opacity: 0.8;
+    #reader__scan_region {
+      border: none !important;
     }
   </style>
 </head>
 
 <body>
 
-<div class="container">
-
-  <h1>Card Finder</h1>
-
-  <div class="subtitle">
-    Scan the QR code on your card
+  <div class="header">
+    Scan Card QR
   </div>
 
-  <div class="scanner">
+  <div id="reader"></div>
 
-    <div id="reader"></div>
-
-    <div class="status" id="status">
-      Starting camera...
-    </div>
-
+  <div class="status" id="status">
+    Point camera at QR code
   </div>
 
-  <div class="manual">
 
-    <strong>Enter Card ID manually</strong>
+  <script>
 
-    <input
-      id="manualId"
-      type="text"
-      placeholder="BB01-BT01-C001"
-    >
-
-    <button onclick="openCard()">
-      Open Card
-    </button>
-
-  </div>
-
-</div>
+    const APP_SCRIPT =
+      "https://script.google.com/macros/s/AKfycbxNrGf9FczFmcu88H3PEettRdipRyUHOOTGHwUtPL2FPKnBC2FJGAMkZGeak522vv_2/exec";
 
 
-<script>
-
-  // Your existing Apps Script Web App
-  const APP_SCRIPT =
-    "https://script.google.com/macros/s/AKfycbxNrGf9FczFmcu88H3PEettRdipRyUHOOTGHwUtPL2FPKnBC2FJGAMkZGeak522vv_2/exec";
+    let scanned = false;
 
 
-  let scannerStarted = false;
+    function onScanSuccess(decodedText) {
 
+      if (scanned) {
+        return;
+      }
 
-  function openCard(cardId) {
-
-    if (!cardId) {
-
-      cardId =
-        document
-          .getElementById("manualId")
-          .value
-          .trim();
-
-    }
-
-    if (!cardId) {
+      scanned = true;
 
       document.getElementById("status").textContent =
-        "Please scan a QR code or enter a Card ID.";
-
-      return;
-
-    }
+        "Card found";
 
 
-    // Stop camera before redirecting
-    if (scannerStarted) {
-
+      // Stop scanner
       html5QrcodeScanner
         .clear()
         .catch(() => {});
 
+
+      // Redirect to Apps Script
+      const url =
+        APP_SCRIPT +
+        "?id=" +
+        encodeURIComponent(decodedText);
+
+
+      window.location.href = url;
+
     }
 
 
-    const url =
-      APP_SCRIPT +
-      "?id=" +
-      encodeURIComponent(cardId);
+    function onScanFailure(error) {
+
+      // Normal scan failures are ignored.
+      // The camera keeps scanning.
+
+    }
 
 
-    window.location.href = url;
+    const html5QrcodeScanner =
+      new Html5QrcodeScanner(
+        "reader",
+        {
+          fps: 15,
 
-  }
+          qrbox: function(
+            viewfinderWidth,
+            viewfinderHeight
+          ) {
 
+            const size =
+              Math.min(
+                viewfinderWidth,
+                viewfinderHeight
+              ) * 0.8;
 
-  function onScanSuccess(decodedText) {
+            return {
+              width: Math.floor(size),
+              height: Math.floor(size)
+            };
 
-    document.getElementById("status").textContent =
-      "Card found. Opening...";
+          },
 
+          rememberLastUsedCamera: true,
 
-    openCard(decodedText);
+          supportedScanTypes: [
+            Html5QrcodeScanType.SCAN_TYPE_CAMERA
+          ]
 
-  }
-
-
-  function onScanFailure(error) {
-
-    // Ignore normal scan failures.
-    // The scanner checks continuously.
-
-  }
-
-
-  const html5QrcodeScanner =
-    new Html5QrcodeScanner(
-      "reader",
-      {
-        fps: 10,
-
-        qrbox: {
-          width: 250,
-          height: 250
         },
+        false
+      );
 
-        rememberLastUsedCamera: true,
 
-        supportedScanTypes: [
-          Html5QrcodeScanType.SCAN_TYPE_CAMERA
-        ]
-      },
-      false
+    html5QrcodeScanner.render(
+      onScanSuccess,
+      onScanFailure
     );
 
-
-  html5QrcodeScanner.render(
-    onScanSuccess,
-    onScanFailure
-  );
-
-  scannerStarted = true;
-
-</script>
+  </script>
 
 </body>
 </html>
+```
