@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Card Tracker</title>
+
+  <script>
+    const APP_SCRIPT =
+      "https://script.google.com/macros/s/AKfycbxNrGf9FczFmcu88H3PEettRdipRyUHOOTGHwUtPL2FPKnBC2FJGAMkZGeak522vv_2/exec";
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    if (id) {
+      window.location.replace(
+        APP_SCRIPT + "?id=" + encodeURIComponent(id)
+      );
+    } else {
+      document.body.innerHTML =
+        "<h2>No Card ID provided.</h2>";
+    }
+  </script>
+</head>
+
+<body>
+  <p>Loading card...</p>
+</body>
+</html>
